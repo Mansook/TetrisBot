@@ -1,2 +1,5 @@
-# TetrisBot
-웹게임 테트리스를 만들어보자
+# Tetris Game
+Typescript
+react
+react-redux
+redux-toolkit

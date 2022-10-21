@@ -1,3 +1,5 @@
+import { roundRect } from "../source/rectDesign";
+
 export const blockColor = (blockType) => {
   let color = 0;
   blockType.map((arr) => arr.map((v) => (v !== 0 ? (color = v) : color)));
@@ -15,13 +17,15 @@ export const blockColor = (blockType) => {
     case 5:
       return "green";
     case 6:
-      return "pink";
+      return "gray";
+      case 7:
+        return "pink";
     default:
       return "white";
   }
 };
 
-export const drawBlock = (block, ctx) => {
+export const drawBlock = (block, ctx,type="default") => {
   if (ctx) {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
@@ -29,7 +33,11 @@ export const drawBlock = (block, ctx) => {
       row.forEach((value, x) => {
         if (value > 0) {
           ctx.fillStyle = blockColor(block.type);
-          ctx.fillRect(x + block.x, y + block.y, 1, 1);
+          if(type==="NextBlockBox")
+            roundRect(ctx,1+x + block.x,1+ y + block.y, 1, 1,0.1);
+            
+          else roundRect(ctx,x + block.x, y + block.y, 1, 1,0.1);
+        
         }
       });
     });

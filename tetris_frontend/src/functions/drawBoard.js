@@ -1,3 +1,5 @@
+import { roundRect } from "../source/rectDesign";
+
 const readColor = (v) => {
   switch (v) {
     case 0:
@@ -13,7 +15,9 @@ const readColor = (v) => {
     case 5:
       return "green";
     case 6:
-      return "pink";
+      return "gray";
+      case 7:
+        return "pink";
     default:
       return "white";
   }
@@ -24,7 +28,8 @@ export const drawBoard = (matrix, ctx) => {
       row.forEach((value, x) => {
         if (value > 0) {
           ctx.fillStyle = readColor(value);
-          ctx.fillRect(x, y, 1, 1);
+          roundRect(ctx,x, y, 1, 1,0.1)
+          
         }
       });
     });

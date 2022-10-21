@@ -8,7 +8,7 @@ import { validateMove, validateRotate } from "./functions/validate";
 
 import { drawBlock } from "./functions/drawBlock";
 import { copy } from "./functions/common";
-import { initMatrix, stack } from "./source/matrix";
+import { initMatrix, isLineFilled, lineRemove, stack } from "./source/matrix";
 import { drawBoard } from "./functions/drawBoard";
 function App() {
   // window.addEventListener("keydown");
@@ -22,7 +22,8 @@ function App() {
   let NextBlock = createRandomBlock();
   let time = 0;
   let map = initMatrix();
-
+  let filledLine=[];
+  let timeForRemoved=0;
   /*const [CurrentBlock, setCurrentBlock] = useState(createRandomBlock());
   const [NextBlock, setNextBlock] = useState(createRandomBlock());
   const [time, setTime] = useState(0);*/
@@ -34,8 +35,8 @@ function App() {
   const boxctx = box?.getContext("2d");
 
   const reDraw = () => {
-    drawBlock(CurrentBlock, boardctx);
-    drawBlock(NextBlock, boxctx);
+    drawBlock(CurrentBlock, boardctx,"DropBlock");
+    drawBlock(NextBlock, boxctx,"NextBlockBox");
     drawBoard(map, boardctx);
   };
 
@@ -54,27 +55,43 @@ function App() {
   };
 
   const repeatMotion = (timeStamp) => {
-    if (timeStamp - time > 800) {
+    if (timeStamp - time > 500) {
       if (!validateMove(CurrentBlock, map, 0, 1)) {
         stack(CurrentBlock, map);
-        console.log(map);
+        
         CurrentBlock = copy(NextBlock);
         NextBlock = createRandomBlock();
       }
       reDraw();
       time = timeStamp;
     }
+
+    if(filledLine.length>0){
+      if(timeForRemoved===0){
+        timeForRemoved=timeStamp;
+      }
+      if(timeStamp-timeForRemoved>300){
+        lineRemove(filledLine,map);
+        filledLine=[];
+        timeForRemoved=0;
+
+       
+        NextBlock=createRandomBlock();
+      }
+      reDraw();
+    }
     window.requestAnimationFrame(repeatMotion);
   };
 
   const keyHandler = (event) => {
-    const inputKey = event.key;
+    const inputKey = event.keyCode;
 
     const KEY = {
-      LEFT: "ArrowLeft",
-      RIGHT: "ArrowRight",
-      UP: "ArrowUp",
-      DOWN: "ArrowDown",
+      LEFT: 37,
+      RIGHT: 39,
+      UP: 38,
+      DOWN: 40,
+      SPACE:32,
     };
     switch (inputKey) {
       case KEY.UP:
@@ -89,6 +106,9 @@ function App() {
       case KEY.RIGHT:
         validateMove(CurrentBlock, map, 1, 0);
         break;
+        case KEY.SPACE:
+          while(validateMove(CurrentBlock,map,0,1));
+          break;
       default:
         return;
     }
@@ -115,7 +135,7 @@ function App() {
             marginBottom: "200px",
           }}
         >
-          <div>
+          <div style={{marginTop:"50px"}}>
             <NextBlockBox />
             <div>단계</div>
             <div className="texts"></div>

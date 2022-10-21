@@ -1,7 +1,7 @@
 import "./css/mainboard.css";
 import { useCustomSize } from "./hooks/useCustomSize";
 import NextBlockBox from "./components/NextBlockBox";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createRandomBlock, selectRandomBlock } from "./functions/selectBlock";
 import { Tetris } from "./components/Tetris";
 import { validateMove, validateRotate } from "./functions/validate";
@@ -10,10 +10,11 @@ import { drawBlock } from "./functions/drawBlock";
 import { copy } from "./functions/common";
 import { initMatrix, isLineFilled, lineRemove, stack } from "./source/matrix";
 import { drawBoard } from "./functions/drawBoard";
+import { CalScore } from "./functions/userData";
+import UserInterface from "./components/UserInterface";
 function App() {
   // window.addEventListener("keydown");
   const clientRect = useCustomSize();
-
   const boardWidth = clientRect.width;
   const boardHeight = clientRect.height;
   const blockSize = Math.floor(boardWidth / 10);
@@ -24,9 +25,11 @@ function App() {
   let map = initMatrix();
   let filledLine=[];
   let timeForRemoved=0;
-  /*const [CurrentBlock, setCurrentBlock] = useState(createRandomBlock());
-  const [NextBlock, setNextBlock] = useState(createRandomBlock());
-  const [time, setTime] = useState(0);*/
+
+  let stage=1;
+  let level=1;
+  let score=0;
+
 
   const board = document.querySelector(".board");
   const boardctx = board?.getContext("2d");
@@ -53,32 +56,39 @@ function App() {
       reDraw();
     }
   };
+const ChangeBlocks=()=>{
+  CurrentBlock = copy(NextBlock);
+  CurrentBlock.x+=4;
 
+  NextBlock = createRandomBlock();
+}
   const repeatMotion = (timeStamp) => {
     if (timeStamp - time > 500) {
       if (!validateMove(CurrentBlock, map, 0, 1)) {
         stack(CurrentBlock, map);
-        
-        CurrentBlock = copy(NextBlock);
-        NextBlock = createRandomBlock();
+        ChangeBlocks();
       }
       reDraw();
       time = timeStamp;
     }
-
+    filledLine=isLineFilled(map);
     if(filledLine.length>0){
       if(timeForRemoved===0){
         timeForRemoved=timeStamp;
       }
+      
       if(timeStamp-timeForRemoved>300){
+        score+=CalScore(filledLine.length);
+        
         lineRemove(filledLine,map);
         filledLine=[];
         timeForRemoved=0;
 
+        ChangeBlocks()
        
-        NextBlock=createRandomBlock();
+        reDraw();
       }
-      reDraw();
+      
     }
     window.requestAnimationFrame(repeatMotion);
   };
@@ -114,6 +124,7 @@ function App() {
     }
     reDraw();
   };
+
   setBoard();
   repeatMotion();
   window.addEventListener("keydown", keyHandler);
@@ -137,12 +148,7 @@ function App() {
         >
           <div style={{marginTop:"50px"}}>
             <NextBlockBox />
-            <div>단계</div>
-            <div className="texts"></div>
-            <div>레벨</div>
-            <div className="texts"></div>
-            <div>점수</div>
-            <div className="texts"></div>
+            <UserInterface/>
           </div>
         </div>
       </div>

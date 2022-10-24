@@ -1,35 +1,39 @@
 import "./css/mainboard.css";
 import { useCustomSize } from "./hooks/useCustomSize";
 import NextBlockBox from "./components/NextBlockBox";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { createRandomBlock, selectRandomBlock } from "./functions/selectBlock";
+import { useEffect, useRef, useState } from "react";
+import { createRandomBlock } from "./functions/selectBlock";
 import { Tetris } from "./components/Tetris";
 import { validateMove, validateRotate } from "./functions/validate";
 
 import { drawBlock } from "./functions/drawBlock";
-import { copy } from "./functions/common";
+
 import { initMatrix, isLineFilled, lineRemove, stack } from "./source/matrix";
 import { drawBoard } from "./functions/drawBoard";
-import { CalScore } from "./functions/userData";
+import { CalLevel, CalScore, CalStage } from "./functions/userData";
 import UserInterface from "./components/UserInterface";
-function App() {
-  // window.addEventListener("keydown");
+
+const App = () => {
   const clientRect = useCustomSize();
   const boardWidth = clientRect.width;
   const boardHeight = clientRect.height;
   const blockSize = Math.floor(boardWidth / 10);
 
-  let CurrentBlock = createRandomBlock();
-  let NextBlock = createRandomBlock();
-  let time = 0;
-  let map = initMatrix();
-  let filledLine=[];
-  let timeForRemoved=0;
+  const [map, setMap] = useState(initMatrix());
+  const [CurrentBlock, setCurrentBlock] = useState(createRandomBlock());
+  const [NextBlock, setNextBlock] = useState(createRandomBlock());
+  const [FilledLines, setFilledlines] = useState([]);
+  const [timeForRemoved, setTimeForRemoved] = useState(0);
+  const [cur, setCur] = useState(0);
+  const [onGame, setOnGame] = useState(false);
 
-  let stage=1;
-  let level=1;
-  let score=0;
+  const [data, setData] = useState({
+    score: 0,
+    level: 1,
+    stage: 1,
+  });
 
+  const repeatRef = useRef(0);
 
   const board = document.querySelector(".board");
   const boardctx = board?.getContext("2d");
@@ -38,96 +42,118 @@ function App() {
   const boxctx = box?.getContext("2d");
 
   const reDraw = () => {
-    drawBlock(CurrentBlock, boardctx,"DropBlock");
-    drawBlock(NextBlock, boxctx,"NextBlockBox");
+    drawBlock(CurrentBlock, boardctx);
+    drawBlock(NextBlock, boxctx, "NextBlockBox");
     drawBoard(map, boardctx);
   };
 
-  const setBoard = () => {
-    if (board && box) {
-      board.width = boardWidth;
-      board.height = boardHeight;
-      boardctx?.scale(blockSize, blockSize);
-
-      box.width = blockSize * 5;
-      box.height = blockSize * 5;
-      boxctx?.scale(blockSize, blockSize);
-
-      reDraw();
-    }
-  };
-const ChangeBlocks=()=>{
-  CurrentBlock = copy(NextBlock);
-  CurrentBlock.x+=4;
-
-  NextBlock = createRandomBlock();
-}
-  const repeatMotion = (timeStamp) => {
-    if (timeStamp - time > 500) {
-      if (!validateMove(CurrentBlock, map, 0, 1)) {
-        stack(CurrentBlock, map);
-        ChangeBlocks();
-      }
-      reDraw();
-      time = timeStamp;
-    }
-    filledLine=isLineFilled(map);
-    if(filledLine.length>0){
-      if(timeForRemoved===0){
-        timeForRemoved=timeStamp;
-      }
-      
-      if(timeStamp-timeForRemoved>300){
-        score+=CalScore(filledLine.length);
-        
-        lineRemove(filledLine,map);
-        filledLine=[];
-        timeForRemoved=0;
-
-        ChangeBlocks()
-       
-        reDraw();
-      }
-      
-    }
-    window.requestAnimationFrame(repeatMotion);
+  const ChangeBlocks = () => {
+    setCurrentBlock({
+      ...NextBlock,
+      x: NextBlock.x + 3,
+    });
+    setNextBlock(createRandomBlock());
   };
 
-  const keyHandler = (event) => {
-    const inputKey = event.keyCode;
+  useEffect(() => {
+    setMap(initMatrix());
+    setCurrentBlock({ ...CurrentBlock, x: CurrentBlock.x + 3 });
+  }, []);
 
-    const KEY = {
-      LEFT: 37,
-      RIGHT: 39,
-      UP: 38,
-      DOWN: 40,
-      SPACE:32,
-    };
-    switch (inputKey) {
-      case KEY.UP:
-        validateRotate(CurrentBlock, map);
-        break;
-      case KEY.DOWN:
-        validateMove(CurrentBlock, map, 0, 1);
-        break;
-      case KEY.LEFT:
-        validateMove(CurrentBlock, map, -1, 0);
-        break;
-      case KEY.RIGHT:
-        validateMove(CurrentBlock, map, 1, 0);
-        break;
-        case KEY.SPACE:
-          while(validateMove(CurrentBlock,map,0,1));
+  useEffect(() => {
+    const keyHandler = (event) => {
+      const inputKey = event.keyCode;
+
+      const KEY = {
+        LEFT: 37,
+        RIGHT: 39,
+        UP: 38,
+        DOWN: 40,
+        SPACE: 32,
+      };
+      switch (inputKey) {
+        case KEY.UP:
+          validateRotate(CurrentBlock, map);
           break;
-      default:
-        return;
-    }
-    reDraw();
-  };
+        case KEY.DOWN:
+          validateMove(CurrentBlock, map, 0, 1);
+          break;
+        case KEY.LEFT:
+          validateMove(CurrentBlock, map, -1, 0);
+          break;
 
-  setBoard();
-  repeatMotion();
-  window.addEventListener("keydown", keyHandler);
+        case KEY.RIGHT:
+          validateMove(CurrentBlock, map, 1, 0);
+          break;
+
+        case KEY.SPACE:
+          while (validateMove(CurrentBlock, map, 0, 1));
+          break;
+        default:
+          return;
+      }
+      reDraw();
+    };
+    if (onGame) window.addEventListener("keydown", keyHandler);
+    return () => window.removeEventListener("keydown", keyHandler);
+  });
+  useEffect(() => {
+    const setBoard = () => {
+      if (board) {
+        board.width = boardWidth;
+        board.height = boardHeight;
+        boardctx?.scale(blockSize, blockSize);
+      }
+      if (box) {
+        box.width = blockSize * 5;
+        box.height = blockSize * 5;
+        boxctx?.scale(blockSize, blockSize);
+      }
+      reDraw();
+    };
+    setBoard();
+  });
+
+  useEffect(() => {
+    const repeatMotion = (timeStamp) => {
+      // Math.floor(1000 / (data.stage * 0.8)
+      if (timeStamp - cur > 100) {
+        if (!validateMove(CurrentBlock, map, 0, 1)) {
+          stack(CurrentBlock, map);
+          //종료 조건 넣어야함
+          ChangeBlocks();
+        }
+        reDraw();
+        setCur(timeStamp);
+      }
+      setFilledlines(isLineFilled(map));
+      if (FilledLines.length > 0) {
+        if (timeForRemoved === 0) {
+          setTimeForRemoved(timeStamp);
+        }
+
+        if (timeStamp - timeForRemoved > 400) {
+          setData({
+            ...data,
+            score: data.score + CalScore(FilledLines.length),
+            stage:
+              data.stage +
+              Math.floor((data.score + CalScore(FilledLines.length)) / 180),
+          });
+          lineRemove(FilledLines, map);
+          setFilledlines([]);
+          setTimeForRemoved(0);
+          ChangeBlocks();
+          reDraw();
+        }
+      }
+
+      repeatRef.current = requestAnimationFrame(repeatMotion);
+    };
+    if (onGame) repeatRef.current = requestAnimationFrame(repeatMotion);
+
+    return () => cancelAnimationFrame(repeatRef.current);
+  });
 
   return (
     <div>
@@ -137,7 +163,7 @@ const ChangeBlocks=()=>{
             marginLeft: "50px",
           }}
         >
-          <Tetris />
+          <Tetris fowardRef={repeatRef} />
         </div>
 
         <div
@@ -146,14 +172,14 @@ const ChangeBlocks=()=>{
             marginBottom: "200px",
           }}
         >
-          <div style={{marginTop:"50px"}}>
+          <div style={{ marginTop: "50px" }}>
             <NextBlockBox />
-            <UserInterface/>
+            <UserInterface data={data} />
+            <button onClick={() => setOnGame(true)}>tlwkr</button>
           </div>
         </div>
       </div>
     </div>
   );
-}
-
+};
 export default App;

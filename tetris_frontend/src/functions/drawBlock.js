@@ -18,26 +18,24 @@ export const blockColor = (blockType) => {
       return "green";
     case 6:
       return "gray";
-      case 7:
-        return "pink";
+    case 7:
+      return "pink";
     default:
       return "white";
   }
 };
 
-export const drawBlock = (block, ctx,type="default") => {
-  if (ctx) {
+export const drawBlock = (block, ctx, type = "default") => {
+  if (ctx && block !== undefined) {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
     block.type.forEach((row, y) => {
       row.forEach((value, x) => {
         if (value > 0) {
           ctx.fillStyle = blockColor(block.type);
-          if(type==="NextBlockBox")
-            roundRect(ctx,1+x + block.x,1+ y + block.y, 1, 1,0.1);
-            
-          else roundRect(ctx,x + block.x, y + block.y, 1, 1,0.1);
-        
+          if (type === "NextBlockBox")
+            roundRect(ctx, 1 + x + block.x, 1 + y + block.y, 1, 1, 0.1);
+          else roundRect(ctx, x + block.x, y + block.y, 1, 1, 0.1);
         }
       });
     });

@@ -120,7 +120,6 @@ const App = () => {
       if (timeStamp - cur > 100) {
         if (!validateMove(CurrentBlock, map, 0, 1)) {
           stack(CurrentBlock, map);
-          //종료 조건 넣어야함
           ChangeBlocks();
         }
         reDraw();
@@ -147,7 +146,10 @@ const App = () => {
           reDraw();
         }
       }
-
+      if (map[1].some((c) => c > 0)) {
+        setOnGame(false);
+        alert("game Over");
+      }
       repeatRef.current = requestAnimationFrame(repeatMotion);
     };
     if (onGame) repeatRef.current = requestAnimationFrame(repeatMotion);

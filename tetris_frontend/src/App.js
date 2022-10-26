@@ -12,6 +12,7 @@ import { initMatrix, isLineFilled, lineRemove, stack } from "./source/matrix";
 import { drawBoard } from "./functions/drawBoard";
 import { CalLevel, CalScore, CalStage } from "./functions/userData";
 import UserInterface from "./components/UserInterface";
+import { speed } from "./source/stages";
 
 const App = () => {
   const clientRect = useCustomSize();
@@ -117,7 +118,8 @@ const App = () => {
   useEffect(() => {
     const repeatMotion = (timeStamp) => {
       // Math.floor(1000 / (data.stage * 0.8)
-      if (timeStamp - cur > 100) {
+      if (timeStamp - cur > speed[data.stage]) {
+        console.log(speed[data.stage]);
         if (!validateMove(CurrentBlock, map, 0, 1)) {
           stack(CurrentBlock, map);
           ChangeBlocks();
@@ -135,9 +137,7 @@ const App = () => {
           setData({
             ...data,
             score: data.score + CalScore(FilledLines.length),
-            stage:
-              data.stage +
-              Math.floor((data.score + CalScore(FilledLines.length)) / 180),
+            stage: CalStage(data.score + CalScore(FilledLines.length)),
           });
           lineRemove(FilledLines, map);
           setFilledlines([]);

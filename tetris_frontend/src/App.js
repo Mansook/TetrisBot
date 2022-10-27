@@ -117,14 +117,12 @@ const App = () => {
 
   useEffect(() => {
     const repeatMotion = (timeStamp) => {
-      // Math.floor(1000 / (data.stage * 0.8)
       if (timeStamp - cur > speed[data.stage]) {
-        console.log(speed[data.stage]);
         if (!validateMove(CurrentBlock, map, 0, 1)) {
           stack(CurrentBlock, map);
           ChangeBlocks();
         }
-        reDraw();
+        //  reDraw();
         setCur(timeStamp);
       }
       setFilledlines(isLineFilled(map));
@@ -142,9 +140,15 @@ const App = () => {
           lineRemove(FilledLines, map);
           setFilledlines([]);
           setTimeForRemoved(0);
-          ChangeBlocks();
-          reDraw();
+          //  reDraw();
         }
+      }
+
+      if (
+        JSON.stringify(CurrentBlock.type) === JSON.stringify(NextBlock.type)
+      ) {
+        setNextBlock(createRandomBlock());
+        reDraw();
       }
       if (map[1].some((c) => c > 0)) {
         setOnGame(false);
